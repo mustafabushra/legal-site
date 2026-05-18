@@ -22,19 +22,14 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Prisma generated client
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Copy full node_modules so startup.js can require('better-sqlite3')
+COPY --from=builder /app/node_modules ./node_modules
 
-# better-sqlite3 native binary
-COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
-
-# Startup script dependencies
+# Startup script and prisma migrations
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/prisma ./prisma
 
-EXPOSE 8080
+# PORT is injected by Railway at runtime — do not hardcode
+EXPOSE 3000
 
-# Apply migrations via plain Node.js script, then start the server
-# PORT is set by Railway at runtime — do not hardcode it
 CMD ["sh", "-c", "node scripts/startup.js && node server.js"]
