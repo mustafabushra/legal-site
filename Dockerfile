@@ -22,15 +22,13 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy Prisma client and native binaries
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+# Copy full node_modules (needed for prisma CLI + better-sqlite3 native binaries)
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy prisma schema and migrations
 COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
-# Run migrations then start
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node server.js"]
+# Run migrations then start server
+CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node server.js"]
