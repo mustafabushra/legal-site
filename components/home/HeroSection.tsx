@@ -43,21 +43,27 @@ export default function HeroSection() {
         }}
       />
 
-      {/* Logo watermark */}
+      {/* Logo strip at bottom */}
       <div
         style={{
           position: "absolute",
-          right: "-5%",
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: "55%",
-          maxWidth: "600px",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "90px",
+          overflow: "hidden",
           pointerEvents: "none",
-          opacity: 0.06,
+          opacity: 0.07,
           filter: "brightness(0) invert(1)",
+          display: "flex",
+          alignItems: "center",
+          gap: "48px",
+          whiteSpace: "nowrap",
         }}
       >
-        <img src="/logo.png" alt="" style={{ width: "100%", height: "auto", display: "block" }} />
+        {Array.from({ length: 12 }).map((_, i) => (
+          <img key={i} src="/logo.png" alt="" style={{ height: "70px", width: "auto", flexShrink: 0 }} />
+        ))}
       </div>
 
       {/* ── Grid ── */}
