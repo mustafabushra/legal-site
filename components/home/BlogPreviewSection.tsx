@@ -7,7 +7,7 @@ export default async function BlogPreviewSection() {
     where: { category: "blog", published: true },
     orderBy: { publishedAt: "desc" },
     take: 3,
-    select: { slug: true, title: true, excerpt: true, publishedAt: true, createdAt: true, tags: true },
+    select: { slug: true, title: true, excerpt: true, publishedAt: true, createdAt: true, category: true },
   });
 
   if (posts.length === 0) return null;
@@ -68,7 +68,7 @@ export default async function BlogPreviewSection() {
         >
           {posts.map((post) => {
             const date = post.publishedAt ?? post.createdAt;
-            const tag = post.tags?.split(",")[0]?.trim() || "قانوني";
+            const tag = post.category || "قانوني";
             return (
               <Link
                 key={post.slug}
