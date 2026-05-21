@@ -33,6 +33,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: "standalone",
   images: { unoptimized: true },
+  serverExternalPackages: ["better-sqlite3", "@prisma/adapter-better-sqlite3"],
 
   async headers() {
     return [

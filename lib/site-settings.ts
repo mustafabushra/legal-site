@@ -1,4 +1,3 @@
-'use server';
 import { prisma } from "@/lib/db";
 
 export const SETTING_DEFAULTS: Record<string, string> = {
