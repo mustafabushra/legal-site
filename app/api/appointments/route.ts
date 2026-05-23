@@ -50,29 +50,36 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "بيانات غير صالحة" }, { status: 422 });
 
   try {
-    const slot = await prisma.appointment.update({
-      where: { id: parsed.data.slotId, available: true },
-      data: {
-        available:   false,
-        clientName:  parsed.data.clientName,
-        clientPhone: parsed.data.clientPhone,
-        service:     parsed.data.service,
-        notes:       parsed.data.notes,
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      // Re-check availability inside transaction to prevent race condition
+      const existing = await tx.appointment.findUnique({ where: { id: parsed.data.slotId } });
+      if (!existing || !existing.available) throw new Error("unavailable");
+
+      const slot = await tx.appointment.update({
+        where: { id: parsed.data.slotId },
+        data: {
+          available:   false,
+          clientName:  parsed.data.clientName,
+          clientPhone: parsed.data.clientPhone,
+          service:     parsed.data.service,
+          notes:       parsed.data.notes,
+        },
+      });
+
+      await tx.lead.create({
+        data: {
+          name:         parsed.data.clientName,
+          phone:        parsed.data.clientPhone,
+          service:      parsed.data.service ?? null,
+          conversation: JSON.stringify({ source: "appointment", slotId: slot.id }),
+          status:       "new",
+        },
+      });
+
+      return slot;
     });
 
-    // Save as lead too
-    await prisma.lead.create({
-      data: {
-        name:         parsed.data.clientName,
-        phone:        parsed.data.clientPhone,
-        service:      parsed.data.service ?? null,
-        conversation: JSON.stringify({ source: "appointment", slotId: slot.id }),
-        status:       "new",
-      },
-    }).catch(() => null);
-
-    return NextResponse.json({ success: true, slot });
+    return NextResponse.json({ success: true, slot: result });
   } catch {
     return NextResponse.json({ error: "الموعد غير متاح أو محجوز مسبقاً" }, { status: 409 });
   }

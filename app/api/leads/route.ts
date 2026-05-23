@@ -4,13 +4,44 @@ import {
   rateLimiters, getIP, tooManyRequests,
   sanitizeText, LeadSchema, LeadStatusSchema,
 } from "@/lib/security";
-import { z } from "zod";
+import { notifyNewLead } from "@/lib/notify";
 
-export async function GET() {
-  // Public GET is intentionally unauthenticated — admin middleware handles /admin pages.
-  // This endpoint is only called server-side from admin pages.
-  const leads = await prisma.lead.findMany({ orderBy: { createdAt: "desc" } });
-  return NextResponse.json(leads);
+function requireAdmin(req: NextRequest) {
+  const session = req.cookies.get("admin-session")?.value;
+  if (session !== "authenticated") {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 });
+  }
+  return null;
+}
+
+export async function GET(req: NextRequest) {
+  const deny = requireAdmin(req);
+  if (deny) return deny;
+
+  const { searchParams } = new URL(req.url);
+  const status  = searchParams.get("status") ?? undefined;
+  const search  = searchParams.get("search") ?? "";
+  const page    = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+  const limit   = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
+  const skip    = (page - 1) * limit;
+
+  const where = {
+    ...(status ? { status } : {}),
+    ...(search ? {
+      OR: [
+        { name:  { contains: search } },
+        { phone: { contains: search } },
+        { email: { contains: search } },
+      ],
+    } : {}),
+  };
+
+  const [leads, total] = await Promise.all([
+    prisma.lead.findMany({ where, orderBy: { createdAt: "desc" }, skip, take: limit }),
+    prisma.lead.count({ where }),
+  ]);
+
+  return NextResponse.json({ leads, total, page, pages: Math.ceil(total / limit) });
 }
 
 export async function POST(req: NextRequest) {
@@ -43,10 +74,15 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  notifyNewLead({ name: lead.name, phone: lead.phone, service: lead.service }).catch(() => null);
+
   return NextResponse.json({ success: true, id: lead.id }, { status: 201 });
 }
 
 export async function DELETE(req: NextRequest) {
+  const deny = requireAdmin(req);
+  if (deny) return deny;
+
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "معرّف مطلوب" }, { status: 400 });
@@ -59,6 +95,9 @@ export async function DELETE(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const deny = requireAdmin(req);
+  if (deny) return deny;
+
   let body: unknown;
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "طلب غير صالح" }, { status: 400 }); }
@@ -69,9 +108,12 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
+    const updateData: { status?: string; notes?: string } = {};
+    if (parsed.data.status) updateData.status = parsed.data.status;
+    if (parsed.data.notes !== undefined) updateData.notes = parsed.data.notes;
     const lead = await prisma.lead.update({
       where: { id: parsed.data.id },
-      data:  { status: parsed.data.status },
+      data:  updateData,
     });
     return NextResponse.json(lead);
   } catch {

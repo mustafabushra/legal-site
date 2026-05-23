@@ -152,5 +152,6 @@ export const AuthSchema = z.object({
 
 export const LeadStatusSchema = z.object({
   id:     z.string().min(1),
-  status: z.enum(["new", "contacted", "closed", "spam"]),
+  status: z.enum(["new", "contacted", "closed", "spam"]).optional(),
+  notes:  z.string().max(5000).optional(),
 });

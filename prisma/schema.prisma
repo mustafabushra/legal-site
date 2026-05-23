@@ -27,14 +27,26 @@ model Page {
 }
 
 model Lead {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String?
   phone        String?
   email        String?
   service      String?
   conversation String
-  status       String   @default("new")
-  createdAt    DateTime @default(now())
+  status       String    @default("new")
+  source       String    @default("website")
+  notes        String?
+  createdAt    DateTime  @default(now())
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String?
+  content   String
+  rating    Int      @default(5)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
 
 model KnowledgeSource {

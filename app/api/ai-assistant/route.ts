@@ -125,18 +125,29 @@ export async function POST(req: NextRequest) {
     const { prompt: rawPrompt, slots } = await buildSystemPrompt();
     const systemPrompt = appendKnownData(rawPrompt, leadData);
 
-    const completion = await getGroq().chat.completions.create({
-      model: AI_CONFIG.model,
-      max_tokens: AI_CONFIG.max_tokens,
-      temperature: AI_CONFIG.temperature ?? 0.6,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...cleanMessages.map((m) => ({
-          role: m.role as "user" | "assistant",
-          content: m.content,
-        })),
-      ],
-    });
+    // Keep only last 10 messages to avoid Groq token overflow
+    const trimmedMessages = cleanMessages.slice(-10);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    let completion;
+    try {
+      completion = await getGroq().chat.completions.create({
+        model: AI_CONFIG.model,
+        max_tokens: AI_CONFIG.max_tokens,
+        temperature: AI_CONFIG.temperature ?? 0.6,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...trimmedMessages.map((m) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          })),
+        ],
+      }, { signal: controller.signal as AbortSignal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     const reply = (completion.choices[0]?.message?.content ?? "").trim();
 
@@ -209,8 +220,10 @@ export async function POST(req: NextRequest) {
       availableSlots: slots.length > 0 && reply.includes("المواعيد") ? slots.slice(0, 5).map(s => ({ date: s.date, time: s.time, meetLink: s.meetLink ?? undefined })) : [],
     });
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return NextResponse.json({ reply: "عذراً، الشبكة بطيئة الآن. يرجى المحاولة مرة أخرى بعد لحظات.", leadCaptured: false, availableSlots: [] });
+    }
     console.error("[AI] route error:", error);
-    const detail = process.env.NODE_ENV !== "production" && error instanceof Error ? ` (${error.message})` : "";
-    return NextResponse.json({ error: `فشل الاتصال بالمساعد، يرجى المحاولة مرة أخرى${detail}` }, { status: 500 });
+    return NextResponse.json({ error: "فشل الاتصال بالمساعد، يرجى المحاولة مرة أخرى" }, { status: 500 });
   }
 }

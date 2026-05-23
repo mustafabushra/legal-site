@@ -7,6 +7,11 @@ import { Phone, Mail, MapPin, Clock, Send, CheckCircle, AlertCircle } from "luci
 const SAUDI_PHONE = /^(\+966|00966|0)(5\d{8})$/;
 const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Normalize Eastern Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩) to Western digits
+function normalizePhone(val: string): string {
+  return val.replace(/[٠١٢٣٤٥٦٧٨٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+}
+
 function sanitize(str: string, max = 500): string {
   return str.trim().slice(0, max).replace(/<[^>]*>/g, "").replace(/[<>"'`]/g, "");
 }
@@ -27,7 +32,8 @@ export default function ContactForm() {
 
   const validate = (): string => {
     if (!form.name.trim() || form.name.trim().length < 2) return "الرجاء إدخال الاسم الكامل";
-    if (!SAUDI_PHONE.test(form.phone.trim())) return "رقم الجوال غير صحيح (مثال: 0555123456)";
+    const normalizedPhone = normalizePhone(form.phone.trim());
+    if (!SAUDI_PHONE.test(normalizedPhone)) return "رقم الجوال غير صحيح — أدخله بالأرقام الإنجليزية (مثال: 0555123456)";
     if (form.email && !EMAIL_RE.test(form.email)) return "البريد الإلكتروني غير صحيح";
     if (!consent) return "يجب الموافقة على سياسة الخصوصية";
     return "";
@@ -45,7 +51,7 @@ export default function ContactForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name:         sanitize(form.name, 100),
-          phone:        form.phone.trim(),
+          phone:        normalizePhone(form.phone.trim()),
           email:        sanitize(form.email, 200),
           service:      sanitize(form.service, 200),
           message:      sanitize(form.message, 2000),

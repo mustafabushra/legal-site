@@ -48,8 +48,8 @@ export default async function PagesAdminPage() {
           ))}
         </div>
 
-        <div style={{ marginTop: "24px", background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: "12px", padding: "16px 20px", fontSize: "14px", color: "#92400E" }}>
-          <strong>ملاحظة:</strong> تعديل الصفحات القانونية يتطلب تعديل ملفات المكون مباشرة في <code style={{ background: "rgba(0,0,0,0.08)", padding: "1px 6px", borderRadius: "4px", direction: "ltr", display: "inline-block" }}>app/privacy-policy</code> و <code style={{ background: "rgba(0,0,0,0.08)", padding: "1px 6px", borderRadius: "4px", direction: "ltr", display: "inline-block" }}>app/terms</code>. سيتم ربطها بقاعدة البيانات في إصدار قادم.
+        <div style={{ marginTop: "24px", background: "#D1FAE5", border: "1px solid #6EE7B7", borderRadius: "12px", padding: "16px 20px", fontSize: "14px", color: "#065F46" }}>
+          <strong>✓</strong> المحتوى محفوظ في قاعدة البيانات — انقر <strong>تعديل</strong> لتحديث أي صفحة فوراً.
         </div>
       </div>
     </AdminShell>

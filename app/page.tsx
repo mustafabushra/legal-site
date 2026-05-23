@@ -19,7 +19,15 @@ export const metadata: Metadata = {
     "مكتب محاماة سعودي متخصص في الاستشارات القانونية، مراجعة العقود، إغلاق الصفقات، وحل النزاعات. خبرة 15+ سنة في السوق السعودي.",
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Read WhatsApp number server-side so it can be updated from admin settings
+  let whatsappNumber = "966555545533";
+  try {
+    const { getSiteSettings } = await import("@/lib/site-settings");
+    const settings = await getSiteSettings();
+    if (settings.whatsapp) whatsappNumber = settings.whatsapp;
+  } catch { /* use default */ }
+
   return (
     <>
       <Header />
@@ -34,7 +42,7 @@ export default function HomePage() {
       </main>
       <Footer />
       <AIChatWidget />
-      <WhatsAppButton />
+      <WhatsAppButton phone={whatsappNumber} />
       <CookieConsent />
     </>
   );
