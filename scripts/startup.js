@@ -31,10 +31,16 @@ for (const folder of folders) {
     db.exec(sql);
     console.log("[startup] Applied:", folder);
   } catch (e) {
-    if (e.message && e.message.includes("already exists")) {
+    const msg = e.message ?? "";
+    if (
+      msg.includes("already exists") ||
+      msg.includes("duplicate column name") ||
+      msg.includes("UNIQUE constraint failed") ||
+      msg.includes("no such table: sqlite_master")
+    ) {
       console.log("[startup] Skipped (exists):", folder);
     } else {
-      console.error("[startup] ERROR:", e.message);
+      console.error("[startup] ERROR:", msg);
       process.exit(1);
     }
   }
