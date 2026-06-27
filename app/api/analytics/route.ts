@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
     totalPosts,
     totalAppointments,
     bookedAppointments,
-    leadsBySourceRaw,
     leadStatusBreakdownRaw,
     recentLeads,
   ] = await Promise.all([
@@ -37,7 +36,6 @@ export async function GET(req: NextRequest) {
     prisma.post.count(),
     prisma.appointment.count(),
     prisma.appointment.count({ where: { available: false } }),
-    prisma.lead.groupBy({ by: ["source"], _count: { id: true } }),
     prisma.lead.groupBy({ by: ["status"], _count: { id: true } }),
     prisma.lead.findMany({
       where: { createdAt: { gte: sevenDaysAgo } },
@@ -60,11 +58,6 @@ export async function GET(req: NextRequest) {
   }
   const leadsLast7Days = Object.entries(dayMap).map(([date, count]) => ({ date, count }));
 
-  const leadsBySource = leadsBySourceRaw.map((r) => ({
-    source: r.source ?? "website",
-    count: r._count.id,
-  }));
-
   const leadStatusBreakdown = leadStatusBreakdownRaw.map((r) => ({
     status: r.status,
     count: r._count.id,
@@ -78,7 +71,6 @@ export async function GET(req: NextRequest) {
     totalPosts,
     totalAppointments,
     bookedAppointments,
-    leadsBySource,
     leadsLast7Days,
     leadStatusBreakdown,
   });

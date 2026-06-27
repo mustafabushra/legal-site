@@ -112,12 +112,6 @@ export default async function LeadDetailPage({
               </div>
             )}
             <div>
-              <div style={{ fontSize: "11px", color: "#9CA3AF", fontWeight: 600, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>المصدر</div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", color: "#1A2744", fontWeight: 600 }}>
-                <Globe size={14} color="#C9A84C" /> {lead.source}
-              </div>
-            </div>
-            <div>
               <div style={{ fontSize: "11px", color: "#9CA3AF", fontWeight: 600, marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.5px" }}>تاريخ الإنشاء</div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", color: "#1A2744", fontWeight: 600 }}>
                 <Calendar size={14} color="#C9A84C" />
@@ -241,7 +235,7 @@ export default async function LeadDetailPage({
         <LeadDetailClient
           leadId={lead.id}
           initialStatus={lead.status}
-          initialNotes={lead.notes ?? ""}
+          initialNotes=""
         />
       </div>
     </AdminShell>
